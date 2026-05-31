@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>増井FIREへの道 — プロダクト ワークフロー</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #171c24;
+    --panel2: #1e2530;
+    --border: #2a323f;
+    --text: #e6eaf0;
+    --muted: #8a94a6;
+    --accent: #4f9dff;
+    --green: #28c76f;
+    --red: #ff5b5b;
+    --amber: #ffb547;
+    --purple: #a779ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+      "Yu Gothic UI", Meiryo, sans-serif;
+    line-height: 1.6;
+    padding: 24px 14px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 24px; letter-spacing: .02em; }
+  header p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin: 18px 0 30px;
+  }
+  .legend span {
+    font-size: 11px; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  /* セクション見出し */
+  .phase { margin-bottom: 14px; }
+  .phase-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em;
+    margin: 26px 0 12px;
+  }
+  .phase-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* カード（ステップ） */
+  .step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .step h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .step .tag {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    background: var(--panel2); color: var(--muted); margin-left: auto;
+    white-space: nowrap;
+  }
+  .step p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .step code {
+    background: var(--panel2); padding: 1px 6px; border-radius: 5px;
+    font-size: 12px; color: var(--accent);
+  }
+  .b-green { border-left-color: var(--green); }
+  .b-red { border-left-color: var(--red); }
+  .b-amber { border-left-color: var(--amber); }
+  .b-purple { border-left-color: var(--purple); }
+
+  /* 矢印 */
+  .arrow { text-align: center; color: var(--muted); font-size: 18px; margin: 2px 0; }
+
+  /* 分岐ブロック */
+  .branch {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;
+  }
+  @media (max-width: 560px) { .branch { grid-template-columns: 1fr; } }
+  .branch .step { margin-bottom: 0; }
+
+  /* スケジュール表 */
+  .sched {
+    width: 100%; border-collapse: collapse; margin-top: 6px;
+    background: var(--panel); border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .sched th, .sched td {
+    padding: 10px 12px; text-align: left; font-size: 12.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sched th { background: var(--panel2); color: var(--muted); font-size: 11px; letter-spacing: .05em; }
+  .sched tr:last-child td { border-bottom: none; }
+  .sched .when { color: var(--accent); font-weight: 700; white-space: nowrap; }
+
+  /* 大ブロック（縦の流れの土台） */
+  .flowbox {
+    background: var(--panel2);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .flowbox > .lbl { font-size: 11px; color: var(--muted); margin: 0 4px 8px; font-weight: 700; }
+
+  footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 36px; line-height: 1.7; }
+  .pill {
+    display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
+    margin: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>増井FIREへの道</h1>
+    <p>米国株 自動売買ボット — プロダクト全体ワークフロー</p>
+    <p style="font-size:12px;margin-top:4px;">戦略：デュアルモメンタム（負けにくさ重視・元本保全型）</p>
+  </header>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--accent)"></i>データ／処理</span>
+    <span><i class="dot" style="background:var(--green)"></i>リスクオン（投資）</span>
+    <span><i class="dot" style="background:var(--red)"></i>リスクオフ（退避・警告）</span>
+    <span><i class="dot" style="background:var(--amber)"></i>記録・通知</span>
+    <span><i class="dot" style="background:var(--purple)"></i>ユーザー／AI</span>
+  </div>
+
+  <!-- ========== 全体の自動運転ループ ========== -->
+  <div class="phase-title">① 自動スケジュール（24時間ボットが見張る）</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+    <code>main.py</code> の APScheduler が米国東部時間で4つのジョブを自動実行します。
+    人は何もしなくてOK。
+  </p>
+  <table class="sched">
+    <tr><th>タイミング</th><th>ジョブ</th><th>内容</th></tr>
+    <tr>
+      <td class="when">毎月 第1営業日<br>09:35 ET</td>
+      <td>リバランス</td>
+      <td>戦略を計算して保有銘柄を入れ替える（中心の処理）</td>
+    </tr>
+    <tr>
+      <td class="when">毎営業日<br>15:55 ET</td>
+      <td>ドローダウン監視</td>
+      <td>含み損が大きすぎたら自動で全部売って安全資産へ退避</td>
+    </tr>
+    <tr>
+      <td class="when">毎月 最終営業日<br>16:10 ET</td>
+      <td>月次レポート</td>
+      <td>今月の成績・保有・損益をまとめてSlackへ送信</td>
+    </tr>
+    <tr>
+      <td class="when">毎月 最終営業日<br>20:00 ET</td>
+      <td>AI戦略レビュー</td>
+      <td>成績を点検し、改善案を理由付きで生成（自動変更はしない）</td>
+    </tr>
+  </table>
+
+  <!-- ========== リバランスの中身 ========== -->
+  <div class="phase-title">② 月次リバランスの流れ（ボットの頭脳）</div>
+
+  <div class="step">
+    <h3>📥 1. データ取得 <span class="tag">DataFetcher</span></h3>
+    <p>監視リスト（SPY・QQQ・各ETF等）の過去2年分の終値を取得。
+       Alpacaで「相場が開いているか」も確認。休場なら何もしない。</p>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step b-red">
+    <h3>🛡️ 2. まずドローダウン判定 <span class="tag">risk_manager</span></h3>
+    <p>ピーク資産から <code>15%</code> 以上下げていたら、戦略計算をスキップして
+       即「リスクオフ」。安全資産 <code>BIL</code> へ全額退避する。</p>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step">
+    <h3>🧠 3. デュアルモメンタム判定 <span class="tag">strategy</span></h3>
+    <p>2つの条件で「攻める／守る」を決定：</p>
+  </div>
+
+  <div class="branch">
+    <div class="step b-green">
+      <h3>🟢 絶対モメンタム OK</h3>
+      <p>基準（SPY）の<code>9ヶ月</code>リターンがプラス →
+         相対モメンタム上位 <code>3銘柄</code> を選んで投資（リスクオン）。</p>
+    </div>
+    <div class="step b-red">
+      <h3>🔴 絶対モメンタム NG</h3>
+      <p>SPYの9ヶ月リターンがマイナス → 株は持たず
+         安全資産 <code>BIL</code> へ退避（リスクオフ）。</p>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step b-amber">
+    <h3>⚖️ 4. ポジションサイズ調整 <span class="tag">risk_manager</span></h3>
+    <p>1銘柄あたりの上限（<code>max_position_size</code>）を超えないよう配分。
+       注文額が資金比率を超えていないか <code>validate_order</code> で検証。</p>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step">
+    <h3>💸 5. 注文執行 <span class="tag">OrderExecutor → Alpaca</span></h3>
+    <p>いったん全ポジションを決済 → 目標の銘柄を新規購入。
+       現在は <span class="pill">ペーパー取引（仮想資金 $100k）</span> で稼働中。</p>
+  </div>
+
+  <!-- ========== 記録・通知 ========== -->
+  <div class="phase-title">③ 記録・通知（毎回の判断を残す）</div>
+
+  <div class="flowbox">
+    <div class="lbl">リバランス完了後、自動で並行実行 ＋ デグレード安全設計</div>
+    <div class="branch">
+      <div class="step b-amber">
+        <h3>📝 判断ログ</h3>
+        <p>「なぜこの銘柄を買ったか／退避したか」を理由付きで
+           <code>logs/*.json</code> に保存。</p>
+      </div>
+      <div class="step b-amber">
+        <h3>🔔 通知</h3>
+        <p>Slack ＋ iPhoneへ Web Push。リバランス完了、DD警告、
+           自動売却、戦略提案などを送信。</p>
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:0 4px;">
+      ※ ログ・通知は <b>try/except</b> で保護。失敗しても取引本体は絶対に止めない設計。
+    </p>
+  </div>
+
+  <!-- ========== ダッシュボード ========== -->
+  <div class="phase-title">④ 見える化（あなたの確認窓口）</div>
+
+  <div class="step b-purple">
+    <h3>📱 モバイルダッシュボード <span class="tag">FastAPI + PWA</span></h3>
+    <p><code>dashboard/</code> が JSON API を配信し、iPhoneのホーム画面アプリで確認可能：</p>
+    <p style="margin-top:8px;">
+      <span class="pill">総資産（$ と ¥ 併記）</span>
+      <span class="pill">元本・損益</span>
+      <span class="pill">保有銘柄</span>
+      <span class="pill">資産推移グラフ</span>
+      <span class="pill">直近の売買理由</span>
+      <span class="pill">為替レート</span>
+      <span class="pill">AI戦略提案</span>
+    </p>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step b-purple">
+    <h3>🧑‍💼 5. 最終判断はあなた <span class="tag">人間が決める</span></h3>
+    <p>AIは改善案を<b>提案するだけ</b>。設定（<code>config/settings.py</code>）の
+       変更は人間が手動で行う。<b>ボットが勝手に戦略を変えることはない。</b></p>
+  </div>
+
+  <!-- ========== 検証ライン ========== -->
+  <div class="phase-title">⑤ 別ライン：検証・改善（運用と並行）</div>
+  <div class="branch">
+    <div class="step">
+      <h3>📊 バックテスト</h3>
+      <p><code>run_backtest.py</code> で2010年〜の成績を検証。
+         CAGR・最大DD・シャープ・勝率をJSON＋グラフ出力。</p>
+    </div>
+    <div class="step">
+      <h3>🔧 パラメータ調整</h3>
+      <p>結果を見て人間が設定を見直し → 再バックテストで
+         「本当に改善するか」を必ず確認してから採用。</p>
+    </div>
+  </div>
+
+  <footer>
+    デプロイ：ローカル / Railway（HTTPS・PWAプッシュ対応）<br>
+    安全方針：ペーパー取引から開始 ・ APIキーは Git 非コミット ・ 投資は自己責任<br>
+    <span style="opacity:.6;">図はコード（main.py / core / dashboard）の実装に基づく</span>
+  </footer>
+
+</div>
+</body>
+</html>

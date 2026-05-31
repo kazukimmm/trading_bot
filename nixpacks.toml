@@ -1,0 +1,11 @@
+# Nixpacks ビルド設定（Python 3.11 環境を指定）。
+# railway.toml の builder = "nixpacks" と組み合わせて使用します。
+
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[start]
+cmd = "python main.py"

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="増井FIRE" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0b0e14" />
+  <title>増井FIREへの道</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/static/icon-192.png" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --card: #151a23;
+      --card2: #1b2230;
+      --text: #e6e9ef;
+      --muted: #8b94a7;
+      --green: #22c55e;
+      --red: #ef4444;
+      --accent: #2dd4bf;
+      --border: #232a38;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 16px 14px calc(28px + env(safe-area-inset-bottom)); }
+
+    header { display: flex; align-items: center; justify-content: space-between; margin: 6px 2px 16px; }
+    header h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: .2px; }
+    .updated { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .badge { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--border); white-space: nowrap; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+    .card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .card .value { font-size: 22px; font-weight: 700; letter-spacing: .3px; }
+    /* 円建て表示 */
+    .card .yen { font-size: 14px; color: var(--muted); font-weight: 600; margin-top: 3px; }
+    .card .yen.sm { font-size: 11px; margin-top: 2px; }
+    .hero { grid-column: 1 / -1; margin-bottom: 12px; }
+    .hero .value { font-size: 28px; }
+    .hero .hero-sub { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+    .hero .hero-pl { font-weight: 700; }
+    .hero .hero-paper { font-size: 11px; color: var(--muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .fxnote { font-size: 10px; color: var(--muted); text-align: center; margin-top: 20px; margin-bottom: 4px; line-height: 1.6; }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+
+    .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 16px; }
+    .section h2 { font-size: 14px; margin: 0 0 12px; font-weight: 600; color: var(--text); }
+    .section h2 .sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+    .ranges { display: flex; gap: 6px; margin-bottom: 10px; }
+    .ranges button {
+      flex: 1; padding: 7px 0; font-size: 12px; font-weight: 600;
+      background: var(--card2); color: var(--muted); border: 1px solid var(--border);
+      border-radius: 9px; cursor: pointer; transition: .15s;
+    }
+    .ranges button.active { background: var(--accent); color: #04201c; border-color: var(--accent); }
+    .chart-box { position: relative; height: 220px; }
+
+    .hold { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; border-bottom: 1px solid var(--border); }
+    .hold:last-child { border-bottom: none; }
+    .hold .sym { font-weight: 700; font-size: 15px; }
+    .hold .wt { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .hold .right { text-align: right; }
+    .hold .val { font-weight: 600; font-size: 14px; }
+    .hold .ret { font-size: 12px; margin-top: 2px; }
+
+    .bt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .bt-item { background: var(--card2); border-radius: 12px; padding: 12px; }
+    .bt-item .l { font-size: 11px; color: var(--muted); }
+    .bt-item .v { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    .note { font-size: 11px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+
+    /* Decision review cards */
+    .decision { background: var(--card2); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; border-left: 4px solid var(--border); }
+    .decision:last-child { margin-bottom: 0; }
+    .decision.ok { border-left-color: var(--green); }
+    .decision.bad { border-left-color: var(--red); }
+    .decision.ongoing { border-left-color: var(--muted); }
+    .decision .dhead { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; gap: 8px; }
+    .decision .ddate { font-size: 11px; color: var(--muted); font-weight: 400; white-space: nowrap; }
+    .decision .dtag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+    .decision.ok .dtag { background: rgba(34,197,94,.16); color: var(--green); }
+    .decision.bad .dtag { background: rgba(239,68,68,.16); color: var(--red); }
+    .decision.ongoing .dtag { background: rgba(139,148,167,.16); color: var(--muted); }
+    .decision .dlabel { font-size: 11px; color: var(--muted); margin-top: 9px; }
+    .decision .dbody { font-size: 13px; line-height: 1.5; margin-top: 2px; }
+    .decision .dresult { font-size: 13px; line-height: 1.5; margin-top: 2px; }
+
+    details.section summary { list-style: none; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    details.section summary::-webkit-details-marker { display: none; }
+    details.section summary .chev { color: var(--muted); transition: .2s; }
+    details[open].section summary .chev { transform: rotate(180deg); }
+
+    .countdown { text-align: center; }
+    .countdown .big { font-size: 30px; font-weight: 800; color: var(--accent); }
+    .countdown .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .skeleton { background: linear-gradient(90deg, #1a2030 25%, #232b3c 37%, #1a2030 63%); background-size: 400% 100%; animation: shimmer 1.3s ease infinite; border-radius: 8px; color: transparent !important; }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    .error-banner { display: none; background: #3b1414; border: 1px solid #5b1d1d; color: #fca5a5; font-size: 13px; padding: 10px 12px; border-radius: 12px; margin-bottom: 14px; }
+    .error-banner.show { display: block; }
+
+    /* Push-notification permission banner */
+    .perm-banner { display: none; background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+    .perm-banner.show { display: block; }
+    .perm-banner .ptitle { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .perm-banner .pdesc { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .perm-banner .prow { display: flex; gap: 10px; }
+    .perm-banner button { flex: 1; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .perm-banner .pyes { background: #0a84ff; color: #fff; }
+    .perm-banner .pno { background: #2a3140; color: var(--muted); }
+
+    /* AI strategy advice banner */
+    .advice-banner { display: none; position: relative; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; cursor: pointer; border: 1px solid var(--border); }
+    .advice-banner.show { display: block; }
+    .advice-banner.good { background: #0f2418; border-color: #1e6b41; }
+    .advice-banner.low { background: #241f0e; border-color: #8a6d1b; }
+    .advice-banner.high { background: #2c190b; border-color: #f97316; }
+    .advice-banner .ab-title { font-size: 14px; font-weight: 700; padding-right: 78px; }
+    .advice-banner .ab-sub { font-size: 12px; color: var(--muted); margin-top: 3px; padding-right: 78px; }
+    .advice-banner .ab-cta { position: absolute; top: 14px; right: 14px; font-size: 12px; font-weight: 700; color: var(--accent); }
+
+    /* AI advice modal (bottom sheet) */
+    .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 50; }
+    .modal-back.show { display: block; }
+    .modal { position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; max-width: 480px; margin: 0 auto; background: var(--card); border-radius: 18px 18px 0 0; border: 1px solid var(--border); max-height: 88vh; overflow-y: auto; padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .25s ease; }
+    .modal.show { transform: translateY(0); }
+    .modal .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .modal .mhead h3 { margin: 0; font-size: 16px; }
+    .modal .mclose { background: none; border: none; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
+    .modal .mlabel { font-size: 11px; color: var(--muted); margin-top: 16px; }
+    .modal .mbody { font-size: 14px; line-height: 1.6; margin-top: 3px; }
+    .sug { background: var(--card2); border-radius: 12px; padding: 12px; margin-top: 10px; }
+    .sug .stitle { font-size: 14px; font-weight: 700; }
+    .sug .sdetail { font-size: 13px; color: var(--text); margin-top: 5px; line-height: 1.55; }
+    .risk { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; white-space: nowrap; }
+    .risk.low { background: rgba(34,197,94,.16); color: var(--green); }
+    .risk.mid { background: rgba(245,158,11,.16); color: #f59e0b; }
+    .risk.high { background: rgba(239,68,68,.16); color: var(--red); }
+    .mwarn { font-size: 12px; color: #fbbf24; margin-top: 18px; line-height: 1.5; }
+    .mbtn { width: 100%; margin-top: 14px; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 12px; border: 1px solid var(--border); background: var(--card2); color: var(--text); cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="error" class="error-banner">⚠️ データ取得に失敗しました。再試行します…</div>
+
+    <!-- Push notification permission banner (shown only if not yet granted) -->
+    <div id="permBanner" class="perm-banner">
+      <div class="ptitle">🔔 重要なアラートを受け取りますか？</div>
+      <div class="pdesc">自動売却・ドローダウン警告・リバランス完了などをプッシュ通知でお知らせします。</div>
+      <div class="prow">
+        <button class="pyes" onclick="requestNotificationPermission()">許可する</button>
+        <button class="pno" onclick="dismissPermBanner()">後で</button>
+      </div>
+    </div>
+
+    <header>
+      <div>
+        <h1>増井FIREへの道</h1>
+        <div class="updated" id="updated">読み込み中…</div>
+      </div>
+      <div class="badge" id="regime">— —</div>
+    </header>
+
+    <!-- 総資産ヒーローカード -->
+    <div class="card hero">
+      <div class="label">総資産（円建て・積立シミュレーション）</div>
+      <div class="value skeleton" id="totalValue">----</div>
+      <div class="hero-sub">
+        <div>元本 <span id="principalYen">--</span>（毎月<span id="monthlyJpy">--</span> × <span id="monthsInvested">--</span>）</div>
+        <div>運用リターン <span id="heroReturn">--</span></div>
+        <div class="hero-pl" id="heroPL">--</div>
+      </div>
+      <div class="hero-paper" id="heroPaper"></div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="grid">
+      <div class="card"><div class="label">総リターン</div><div class="value skeleton" id="totalReturn">----</div></div>
+      <div class="card">
+        <div class="label">本日</div>
+        <div class="value skeleton" id="todayReturn">----</div>
+        <div class="yen sm" id="todayYen"></div>
+      </div>
+      <div class="card"><div class="label">ドローダウン</div><div class="value skeleton" id="drawdown">----</div></div>
+    </div>
+
+    <!-- AI strategy advice banner (shown only when advice exists) -->
+    <div id="adviceBanner" class="advice-banner" onclick="openAdvice()"></div>
+
+    <!-- Equity chart -->
+    <div class="section">
+      <h2>資産推移 <span class="sub">（戦略の検証カーブ）</span></h2>
+      <div class="ranges" id="ranges">
+        <button data-r="1M">1M</button>
+        <button data-r="3M">3M</button>
+        <button data-r="6M">6M</button>
+        <button data-r="1Y">1Y</button>
+        <button data-r="ALL" class="active">ALL</button>
+      </div>
+      <div class="chart-box"><canvas id="equityChart"></canvas></div>
+    </div>
+
+    <!-- Holdings -->
+    <div class="section">
+      <h2>現在の保有銘柄</h2>
+      <div id="holdings"><div class="hold skeleton" style="height:48px"></div></div>
+    </div>
+
+    <!-- Decision review -->
+    <div class="section">
+      <h2>判断の振り返り <span class="sub">（なぜ買ったか → 結果）</span></h2>
+      <div id="decisions"><div class="note">まだ判断履歴がありません。初回リバランス後に表示されます。</div></div>
+    </div>
+
+    <!-- Countdown -->
+    <div class="section countdown">
+      <div class="big" id="cdDays">--</div>
+      <div class="lbl">次回リバランスまで（<span id="nextDate">----</span>）</div>
+    </div>
+
+    <!-- Backtest (collapsible) -->
+    <details class="section">
+      <summary>バックテスト実績 <span class="chev">▾</span></summary>
+      <div class="bt-grid" style="margin-top:12px">
+        <div class="bt-item"><div class="l">CAGR（年率）</div><div class="v" id="btCagr">--</div></div>
+        <div class="bt-item"><div class="l">最大ドローダウン</div><div class="v" id="btDd">--</div></div>
+        <div class="bt-item"><div class="l">シャープレシオ</div><div class="v" id="btSharpe">--</div></div>
+        <div class="bt-item"><div class="l">月次勝率</div><div class="v" id="btWin">--</div></div>
+        <div class="bt-item"><div class="l">総リターン</div><div class="v" id="btTotal">--</div></div>
+        <div class="bt-item"><div class="l">SPY超過(年率)</div><div class="v" id="btAlpha">--</div></div>
+      </div>
+      <div class="note">※ 過去データ（2010年〜）による検証結果です。将来の成績を保証するものではありません。</div>
+    </details>
+
+    <!-- 為替レート（円換算の根拠） -->
+    <div class="fxnote" id="fxNote"></div>
+    <div class="fxnote">⚠️ 投資は自己責任です。本アプリは情報提供のみを目的とし、売買を推奨するものではありません。</div>
+  </div>
+
+  <!-- AI advice modal -->
+  <div id="adviceBack" class="modal-back" onclick="closeAdvice()"></div>
+  <div id="adviceModal" class="modal">
+    <div class="mhead"><h3>AI診断レポート</h3><button class="mclose" onclick="closeAdvice()">×</button></div>
+    <div id="adviceModalBody"></div>
+  </div>
+
+  <script>
+    const REFRESH_MS = 30000;
+    let equityChart = null;
+    let fullHistory = [];
+
+    let fxRate = null; // USD/JPY（円建て表示に使用。null のうちは円表示を省略）
+
+    const fmtUsd = v => "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtYen = v => "¥" + Math.round(Number(v)).toLocaleString("en-US");
+    const fmtPct = v => (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%";
+    const cls = v => v >= 0 ? "pos" : "neg";
+    // 符号付き（プラスは緑/+、マイナスは赤/−）。
+    const signUsd = v => (v >= 0 ? "+" : "-") + "$" + Math.abs(Number(v)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const signYen = v => (v >= 0 ? "+" : "-") + "¥" + Math.round(Math.abs(Number(v))).toLocaleString("en-US");
+
+    async function getJSON(path) {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(path + " -> " + res.status);
+      return res.json();
+    }
+    function showError(on) { document.getElementById("error").classList.toggle("show", on); }
+    function unskel(el) { el.classList.remove("skeleton"); }
+
+    const REGIME = {
+      BULL: { txt: "🟢 BULL", },
+      NEUTRAL: { txt: "🟡 NEUTRAL" },
+      BEAR: { txt: "🔴 BEAR" },
+    };
+
+    function renderFx(fx) {
+      // 為替レートを取り込み、フッターに表示する。取得失敗時は円建て表示を省略。
+      const note = document.getElementById("fxNote");
+      if (fx && typeof fx.rate === "number" && fx.rate > 0) {
+        fxRate = fx.rate;
+        let when = "";
+        if (fx.updated_at) {
+          // "YYYY-MM-DD HH:MM" -> "MM/DD HH:MM"
+          const m = String(fx.updated_at).match(/\d{4}-(\d{2})-(\d{2})\s+(\d{2}:\d{2})/);
+          when = m ? `（${m[1]}/${m[2]} ${m[3]}更新）` : `（${fx.updated_at}更新）`;
+        }
+        if (note) note.textContent = `現在の為替レート: 1$ = ¥${fx.rate.toFixed(2)}${when}`;
+      } else {
+        fxRate = null;
+        if (note) note.textContent = "";
+      }
+    }
+
+    function renderSummary(s) {
+      // --- 円建て積立シミュレーション（メイン表示） ---
+      const principalYen = Number(s.principal_jpy || 0);
+      const valueYen = Number(s.value_jpy || 0);
+      const plYen = Number(s.pl_jpy || 0);
+      const retPct = Number(s.yen_return_pct || 0);
+
+      const tv = document.getElementById("totalValue"); tv.textContent = fmtYen(valueYen); unskel(tv);
+      document.getElementById("principalYen").textContent = fmtYen(principalYen);
+      document.getElementById("monthlyJpy").textContent = fmtYen(s.monthly_contribution_jpy || 0);
+      document.getElementById("monthsInvested").textContent = (s.months_invested || 0) + "回";
+      const hr = document.getElementById("heroReturn"); hr.textContent = fmtPct(retPct); hr.className = cls(retPct);
+      const heroPL = document.getElementById("heroPL");
+      heroPL.className = "hero-pl " + cls(plYen);
+      heroPL.textContent = signYen(plYen);
+      // ペーパー検証口座の注記（仮想資金 $ と戦略リターン）。
+      const hp = document.getElementById("heroPaper");
+      if (hp) hp.textContent = "ペーパー検証口座: " + fmtUsd(s.total_value) + "（仮想資金 / 戦略リターン " + fmtPct(retPct) + "）";
+
+      // --- サマリーカード ---
+      const tr = document.getElementById("totalReturn"); tr.textContent = fmtPct(retPct); tr.className = "value " + cls(retPct);
+      const td = document.getElementById("todayReturn"); td.textContent = fmtPct(s.today_return_pct); td.className = "value " + cls(s.today_return_pct);
+      const ty = document.getElementById("todayYen"); if (ty) ty.textContent = "";
+      const dd = document.getElementById("drawdown"); dd.textContent = "-" + Math.abs(s.current_drawdown_pct).toFixed(2) + "%"; dd.className = "value " + (s.current_drawdown_pct > 0 ? "neg" : "pos");
+
+      const r = REGIME[s.market_regime] || { txt: s.market_regime };
+      document.getElementById("regime").textContent = r.txt;
+      document.getElementById("updated").textContent = "更新: " + new Date().toLocaleTimeString("ja-JP") + (s.data_source === "live" ? "（ライブ）" : "（検証データ）");
+
+      // Countdown
+      document.getElementById("nextDate").textContent = s.next_rebalance;
+      const days = Math.max(0, Math.ceil((new Date(s.next_rebalance) - new Date()) / 86400000));
+      document.getElementById("cdDays").textContent = days + "日";
+    }
+
+    function renderHoldings(list) {
+      const box = document.getElementById("holdings");
+      if (!list || !list.length) { box.innerHTML = '<div class="note">保有なし（現金 / リスクオフ）</div>'; return; }
+      // 保有はペーパー口座の配分（$建て）。円建ては積立シミュレーション側に集約。
+      box.innerHTML = list.map(h => `
+        <div class="hold">
+          <div>
+            <div class="sym">${h.symbol}</div>
+            <div class="wt">比率 ${(h.weight * 100).toFixed(1)}%</div>
+          </div>
+          <div class="right">
+            <div class="val">${fmtUsd(h.value)}</div>
+            <div class="ret ${cls(h.return_pct)}">${fmtPct(h.return_pct)}</div>
+          </div>
+        </div>`).join("");
+    }
+
+    const ACTION_JP = { buy: "買い", sell: "売り", hold: "継続", retreat: "退避" };
+
+    function renderDecisions(list) {
+      const box = document.getElementById("decisions");
+      if (!list || !list.length) {
+        box.innerHTML = '<div class="note">まだ判断履歴がありません。初回リバランス後に表示されます。</div>';
+        return;
+      }
+      box.innerHTML = list.map(d => {
+        const ok = d.result_label === "成功";
+        const bad = d.result_label === "失敗";
+        const klass = ok ? "ok" : (bad ? "bad" : "ongoing");
+        const mark = ok ? "✓" : (bad ? "✗" : "…");
+        const dateStr = (d.date || "").replace(/-/g, "/");
+        const action = ACTION_JP[d.action] || d.action;
+        let result;
+        if (d.price_now != null && d.return_pct != null) {
+          const verdict = ok ? "判断は正しかった" : (bad ? "判断は外れた" : "経過観察中");
+          result = `購入時 ${fmtUsd(d.price_at_decision)} → 現在 ${fmtUsd(d.price_now)}`
+            + `<br><span class="${cls(d.return_pct)}">${fmtPct(d.return_pct)} ${mark} ${verdict}</span>`;
+        } else {
+          result = `購入時 ${fmtUsd(d.price_at_decision)} → 結果は次回レビューで更新 …`;
+        }
+        return `<div class="decision ${klass}">
+          <div class="dhead">
+            <span><span class="dtag">${d.result_label}</span>${d.symbol} ${action}</span>
+            <span class="ddate">${dateStr}</span>
+          </div>
+          <div class="dlabel">判断理由</div>
+          <div class="dbody">${d.reason || "—"}</div>
+          <div class="dlabel">結果</div>
+          <div class="dresult">${result}</div>
+        </div>`;
+      }).join("");
+    }
+
+    // --- AI strategy advice ---
+    let currentAdvice = null;
+
+    function renderAdvice(a) {
+      const banner = document.getElementById("adviceBanner");
+      if (!a || !a.has_advice) { banner.classList.remove("show"); currentAdvice = null; return; }
+      currentAdvice = a;
+      const strong = a.urgency === "medium" || a.urgency === "high";
+      // keep_current（成績良好で現状維持推奨）の場合は緑の前向き表示にする。
+      let variant, icon, title;
+      if (a.keep_current && !strong) {
+        variant = "good"; icon = "✅"; title = "現状の戦略は良好です";
+      } else if (strong) {
+        variant = "high"; icon = "⚠️"; title = "戦略の見直しを推奨します";
+      } else {
+        variant = "low"; icon = "💡"; title = "戦略の改善提案があります";
+      }
+      banner.className = "advice-banner show " + variant;
+      banner.innerHTML =
+        `<span class="ab-cta">理由を見る ›</span>`
+        + `<div class="ab-title">${icon} ${title}</div>`
+        + `<div class="ab-sub">${a.trigger_reason || ""}</div>`;
+    }
+
+    function riskClass(r) { r = r || ""; return r.includes("高") ? "high" : (r.includes("中") ? "mid" : "low"); }
+
+    function openAdvice() {
+      if (!currentAdvice) return;
+      const a = currentAdvice;
+      const sug = (a.suggestions || []).map(s =>
+        `<div class="sug">
+           <div class="stitle"><span class="risk ${riskClass(s.risk_level)}">${s.risk_level || "低"}リスク</span>${s.title || ""}</div>
+           <div class="sdetail">${s.detail || ""}</div>
+         </div>`).join("");
+      document.getElementById("adviceModalBody").innerHTML =
+        `<div class="mlabel">判断理由</div><div class="mbody">${a.trigger_reason || "—"}</div>`
+        + `<div class="mlabel">診断結果</div><div class="mbody">${a.diagnosis || "—"}</div>`
+        + `<div class="mlabel">${a.keep_current ? "推奨アクション" : "改善提案"}</div>${sug || '<div class="mbody">—</div>'}`
+        + `<div class="mwarn">⚠️ 提案は参考です。実際の変更は config/settings.py を手動で編集してください（自動では絶対に変更しません）。最終判断は自己責任で行ってください。</div>`
+        + `<button class="mbtn" onclick="closeAdvice()">閉じる</button>`;
+      document.getElementById("adviceBack").classList.add("show");
+      document.getElementById("adviceModal").classList.add("show");
+    }
+
+    function closeAdvice() {
+      document.getElementById("adviceBack").classList.remove("show");
+      document.getElementById("adviceModal").classList.remove("show");
+    }
+
+    async function dismissAdvice() {
+      try { await fetch("/api/strategy/advice/dismiss", { method: "POST" }); } catch (e) { /* best-effort */ }
+      closeAdvice();
+      document.getElementById("adviceBanner").classList.remove("show");
+      currentAdvice = null;
+    }
+
+    function renderBacktest(b) {
+      document.getElementById("btCagr").textContent = b.cagr.toFixed(1) + "%";
+      document.getElementById("btDd").textContent = "-" + Math.abs(b.max_drawdown).toFixed(1) + "%";
+      document.getElementById("btSharpe").textContent = b.sharpe_ratio.toFixed(2);
+      document.getElementById("btWin").textContent = b.win_rate.toFixed(1) + "%";
+      document.getElementById("btTotal").textContent = b.total_return.toFixed(1) + "%";
+      const alpha = document.getElementById("btAlpha");
+      alpha.textContent = fmtPct(b.vs_spy_alpha);
+      alpha.classList.add(b.vs_spy_alpha >= 0 ? "pos" : "neg");
+    }
+
+    function sliceHistory(range) {
+      if (range === "ALL" || !fullHistory.length) return fullHistory;
+      const months = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12 }[range] || 9999;
+      const last = new Date(fullHistory[fullHistory.length - 1].date);
+      const cutoff = new Date(last); cutoff.setMonth(cutoff.getMonth() - months);
+      return fullHistory.filter(p => new Date(p.date) >= cutoff);
+    }
+
+    function drawChart(range) {
+      const data = sliceHistory(range);
+      const labels = data.map(p => p.date);
+      const values = data.map(p => p.value);
+      const ctx = document.getElementById("equityChart");
+      if (equityChart) equityChart.destroy();
+      equityChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            data: values, borderColor: "#2dd4bf", borderWidth: 2,
+            pointRadius: 0, tension: 0.25,
+            fill: true, backgroundColor: "rgba(45,212,191,0.10)",
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: { legend: { display: false }, tooltip: {
+            callbacks: { label: c => fmtUsd(c.parsed.y) } } },
+          scales: {
+            x: { ticks: { color: "#8b94a7", maxTicksLimit: 5, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: "#8b94a7", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "#1c2433" } },
+          },
+        },
+      });
+    }
+
+    document.getElementById("ranges").addEventListener("click", e => {
+      const btn = e.target.closest("button"); if (!btn) return;
+      document.querySelectorAll("#ranges button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      drawChart(btn.dataset.r);
+    });
+
+    async function refresh() {
+      try {
+        const [summary, holdings, history, bt, decisions, advice, fx] = await Promise.all([
+          getJSON("/api/portfolio/summary"),
+          getJSON("/api/portfolio/holdings"),
+          getJSON("/api/portfolio/history"),
+          getJSON("/api/backtest/results"),
+          getJSON("/api/portfolio/decisions"),
+          getJSON("/api/strategy/advice"),
+          getJSON("/api/fx/usdjpy").catch(() => null),
+        ]);
+        showError(false);
+        renderFx(fx);
+        renderSummary(summary);
+        renderHoldings(holdings);
+        renderBacktest(bt);
+        renderDecisions(decisions);
+        renderAdvice(advice);
+        fullHistory = history;
+        const active = document.querySelector("#ranges button.active");
+        drawChart(active ? active.dataset.r : "ALL");
+      } catch (err) {
+        console.error(err);
+        showError(true);
+      }
+    }
+
+    // ---- Push notifications (PWA) ----------------------------------------
+    const PERM_HIDE_KEY = "permBannerHideUntil";
+
+    // base64url 文字列を Uint8Array に変換（applicationServerKey 用）。
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const arr = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    }
+
+    // Service Worker を登録（push 受信に必要）。
+    async function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return null;
+      try {
+        return await navigator.serviceWorker.register("/sw.js");
+      } catch (e) {
+        console.error("SW register failed", e);
+        return null;
+      }
+    }
+
+    // 許可バナーの表示要否を判定。
+    function maybeShowPermBanner() {
+      const banner = document.getElementById("permBanner");
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+      if (Notification.permission === "granted") return; // 許可済みは永久に非表示
+      if (Notification.permission === "denied") return;   // ブロック済みは出さない
+      const hideUntil = parseInt(localStorage.getItem(PERM_HIDE_KEY) || "0", 10);
+      if (Date.now() < hideUntil) return; // 「後で」で 7 日間非表示
+      banner.classList.add("show");
+    }
+
+    // 「後で」：7 日間非表示。
+    function dismissPermBanner() {
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      localStorage.setItem(PERM_HIDE_KEY, String(Date.now() + sevenDays));
+      document.getElementById("permBanner").classList.remove("show");
+    }
+
+    // 通知を許可 → 購読登録 → サーバへ送信。
+    async function requestNotificationPermission() {
+      try {
+        const permission = await Notification.requestPermission();
+        document.getElementById("permBanner").classList.remove("show");
+        if (permission !== "granted") return;
+
+        const reg = (await navigator.serviceWorker.ready) || (await registerServiceWorker());
+        const res = await getJSON("/api/notifications/vapid-key");
+        if (!res || !res.public_key) {
+          alert("通知サーバーの設定（VAPIDキー）が未完了です。");
+          return;
+        }
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(res.public_key),
+        });
+        await fetch("/api/notifications/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sub),
+        });
+        alert("✅ 通知を有効にしました。");
+      } catch (e) {
+        console.error("Enable notifications failed", e);
+        alert("通知の有効化に失敗しました: " + e.message);
+      }
+    }
+
+    registerServiceWorker().then(maybeShowPermBanner);
+
+    refresh();
+    setInterval(refresh, REFRESH_MS);
+  </script>
+</body>
+</html>

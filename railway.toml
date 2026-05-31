@@ -1,0 +1,11 @@
+# Railway デプロイ設定。
+# 秘密情報（APIキー等）は GitHub に push せず、Railway の管理画面
+# （Settings → Variables）で設定します。詳細は docs/railway_setup.md を参照。
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python main.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

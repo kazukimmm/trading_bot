@@ -1,0 +1,36 @@
+# Python 3.11+ recommended
+
+# Data & numerics
+pandas>=2.1
+numpy>=1.26
+yfinance>=0.2.40
+
+# Broker API (Alpaca official current SDK)
+alpaca-py>=0.21
+
+# Scheduling
+APScheduler>=3.10
+
+# Config
+python-dotenv>=1.0
+
+# HTTP (Slack notifications, retries)
+requests>=2.31
+
+# Plotting (backtest reports)
+matplotlib>=3.8
+
+# Dashboard (FastAPI API + mobile UI)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+# AI strategy advisor (optional; advisor degrades gracefully if unset)
+anthropic>=0.39
+
+# Web Push notifications (PWA / VAPID)
+pywebpush>=2.0
+# Pillow is used by scripts to generate PWA icons (optional at runtime)
+Pillow>=10.0
+
+# Testing
+pytest>=8.0
